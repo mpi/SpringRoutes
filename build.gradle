@@ -1,0 +1,41 @@
+apply plugin: 'war'
+
+ext {
+    jettyVersion = '7.6.0.v20120127'
+    springVersion = '4.0.2.RELEASE'  
+    springBootVersion = '1.1.8.RELEASE'
+    jacksonVersion = '2.0.2'
+    
+}
+
+dependencies {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.mockito:mockito-core:1.9.5'
+    testCompile 'org.assertj:assertj-core:1.6.1'
+    testCompile 'com.googlecode.catch-exception:catch-exception:1.2.0'
+
+//    testCompile "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+//    testCompile "org.eclipse.jetty:jetty-webapp:$jettyVersion"
+    
+    compile("org.springframework.boot:spring-boot-starter-web:$springBootVersion") {
+        exclude module: "spring-boot-starter-tomcat"
+    }
+    compile("org.springframework.boot:spring-boot-starter-jetty:$springBootVersion")
+    
+    compile "org.springframework:spring-webmvc:$springVersion"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'commons-io:commons-io:2.4'
+}
+
+sourceCompatibility = 1.8
+
+task wrapper(type: org.gradle.api.tasks.wrapper.Wrapper) {
+    gradleVersion = '1.12'
+}  	
+  	
