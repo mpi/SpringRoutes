@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableAutoConfiguration
+@EnableRoutes({ "cart.js", "demo.js"})
 @ComponentScan
 public class Application {
 

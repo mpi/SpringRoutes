@@ -1,5 +1,9 @@
 package com.github.mpi.spring_routes;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -7,24 +11,46 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportAware;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-@Component
-public class ScriptHandler implements HandlerMapping, HandlerAdapter, InitializingBean, Ordered, ApplicationContextAware {
+@Configuration
+public class ScriptHandler implements HandlerMapping, HandlerAdapter, InitializingBean, Ordered, ApplicationContextAware, ImportAware {
 
     private ApplicationContext applicationContext;
     
     private Routes routes;
+    
+    private List<String> scripts = new ArrayList<>();
 
     @Override
     public void afterPropertiesSet() throws Exception {
+    
         routes = new Routes(applicationContext);
-        routes.registerRoutesFrom("cart.js");
+    
+        scripts.forEach(this::loadScript);
+        
+    }
+
+    private void loadScript(String s) {
+        try {
+            routes.registerRoutesFrom(s);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Bean
+    public Routes routes(){
+        return routes;
     }
     
     @Override
@@ -65,6 +91,12 @@ public class ScriptHandler implements HandlerMapping, HandlerAdapter, Initializi
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    @Override
+    public void setImportMetadata(AnnotationMetadata metadata) {
+        AnnotationAttributes attributes = AnnotationAttributes.fromMap(metadata.getAnnotationAttributes(EnableRoutes.class.getName(), true));
+        this.scripts.addAll(Arrays.asList(attributes.getStringArray("value")));
     }
 
 }

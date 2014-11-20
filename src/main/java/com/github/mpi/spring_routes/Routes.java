@@ -42,12 +42,12 @@ public class Routes {
     }
 
     public interface Callback {
-        public void handle(Req req, Res res);
+        public void handle(Req req, Res res, Next next);
     }
 
     public class Route implements Cloneable {
         
-        private Callback callback;
+        private Callback callback = (req, res, next) -> next.next();
         
         private RequestMappingInfo mapping;
 
@@ -68,7 +68,7 @@ public class Routes {
             
             List<String> urls = new ArrayList<>(mapping.getPatternsCondition().getPatterns());
             
-            callback.handle(new Req(req, urls.get(0)), new Res(res));
+            callback.handle(new Req(req, urls.get(0)), new Res(res), () -> {});
         }
         
         public Route get(String url, Callback handler){
@@ -83,7 +83,7 @@ public class Routes {
                     new ProducesRequestCondition(),
                     null
             ));
-            copy.callback = handler;
+            copy.chain(handler);
             
             registerRoute(copy);
             
@@ -117,10 +117,29 @@ public class Routes {
                     new ProducesRequestCondition(),
                     null
             ));
-            copy.callback = handler;
+            copy.chain(handler);
             
             registerRoute(copy);
             return this;
+        }
+
+        public Route use(Callback handler){
+            
+            Route copy = this.copy();
+            copy.chain(handler);
+
+            return copy;
+        }
+
+        private void chain(Callback handler) {
+            Callback parent = callback; 
+            callback = new Callback() {
+                
+                @Override
+                public void handle(Req req, Res res, Next next) {
+                    parent.handle(req, res, () -> handler.handle(req, res, next));
+                }
+            };
         }
 
         public Route path(String url){
@@ -176,6 +195,8 @@ public class Routes {
 
     public void registerRoutesFrom(String script) throws ScriptException {
         
+        System.out.println("Loading " + script);
+        
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
         
         SimpleScriptContext context = new SimpleScriptContext();
@@ -190,6 +211,10 @@ public class Routes {
         return reader;
     }
 
+    public void log(String message){
+        System.out.println(message);
+    }
+    
     public boolean hasHandlerFor(HttpServletRequest request) {
 
         for (Route route : routes) {

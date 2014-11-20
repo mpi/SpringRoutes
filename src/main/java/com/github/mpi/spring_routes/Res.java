@@ -15,4 +15,12 @@ public class Res {
     public void send(String text) throws IOException{
         resp.getOutputStream().println(text);
     }
+    
+    public void contentType(String contentType){
+        resp.setContentType(contentType);
+    }
+
+    public void status(int status){
+        resp.setStatus(status);
+    }
 }

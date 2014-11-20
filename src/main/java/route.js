@@ -23,6 +23,12 @@ var bean = function(beanName){
 	return _app.bean(beanName);
 };
 
+var console = {
+	log: function(message) {
+		_app.log(message);
+	}
+};
+
 var route = function(_r){
 
 	var _route = _r || _app.route();
@@ -36,7 +42,9 @@ var route = function(_r){
 		}
 		
 		return {
-			param: _req.param,
+			param: function(param){
+				return _req.param(param);
+			},
 			params: _req.params,
 			body: bodyJson || {}
 		};
@@ -44,24 +52,41 @@ var route = function(_r){
 
 	var res = function(_res){
 		
-		return {
+		var r = {
 			send: function(obj){
-				return _res.send(obj);
+				_res.send(obj);
+				return r;
 			},
 			sendJson: function(obj){
-				return _res.send(JSON.stringify(obj));
+				_res.send(JSON.stringify(obj));
+				return r;
+			},
+			contentType: function(contentType){
+				_res.contentType(contentType);
+				return r;
+			},
+			status: function(status){
+				_res.status(status);
+				return r;
 			}
 		};
+		
+		return r;
 	};
 	
 	var delegateTo = function(callback){
-		return function(_req, _res){
-			callback(new req(_req), new res(_res));
+		return function(_req, _res, _next){
+			callback(new req(_req), new res(_res), function(){
+				_next.next();
+			});
 		};
 	};
 	
 	var r = {
-		
+
+		use: function(callback){
+			return route(_route.use(delegateTo(callback))); 
+		},
 		get: function(url, callback){
 			return route(_route.get(url, delegateTo(callback))); 
 		},
@@ -72,7 +97,11 @@ var route = function(_r){
 			return route(_route.path(url));
 		},
 		produces: function(contentType){
-			return route(_route.produces(contentType));
+			return route(_route.produces(contentType))
+				.use(function(req, res, next){
+					res.contentType(contentType);
+					next();
+				});
 		},
 		consumes: function(contentType){
 			return route(_route.consumes(contentType));
